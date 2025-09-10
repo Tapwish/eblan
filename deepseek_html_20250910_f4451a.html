@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эффект конфетти</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .text-container {
+            text-align: center;
+            z-index: 100;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+        
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-container">
+        <h1>Ты еблан</h1>
+        <p class="subtitle">с дреин эффектом и конфетти</p>
+    </div>
+    <canvas id="confetti"></canvas>
+
+    <script>
+        // Конфигурация конфетти
+        const confettiSettings = {
+            maxCount: 200,       // Макс. количество конфетти
+            speed: 3,           // Скорость
+            frameInterval: 15,  // Интервал кадров
+            alpha: 1.0,         // Прозрачность
+            gradient: false     // Градиент
+        };
+        
+        // Инициализация конфетти
+        (function() {
+            let confetti = [];
+            const confettiCanvas = document.getElementById("confetti");
+            const context = confettiCanvas.getContext("2d");
+            let animationFrame;
+            
+            // Установка размеров canvas
+            function setupCanvas() {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            }
+            
+            window.addEventListener('resize', function() {
+                setupCanvas();
+            });
+            
+            setupCanvas();
+            
+            // Конструктор конфетти
+            function ConfettiParticle() {
+                this.x = Math.random() * confettiCanvas.width;
+                this.y = Math.random() * confettiCanvas.height - confettiCanvas.height;
+                this.speed = (Math.random() * 10 + 3);
+                this.speedY = (Math.random() * 5 + 2);
+                this.speedX = (Math.random() * 4 - 2);
+                this.size = (Math.random() * 15 + 5);
+                this.color = getRandomColor();
+                this.rotation = (Math.random() * 360);
+                this.rotationSpeed = (Math.random() * 5 + 2);
+            }
+            
+            function getRandomColor() {
+                const colors = [
+                    '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
+                    '#ff00ff', '#00ffff', '#ff7700', '#ffffff'
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            // Обновление позиции конфетти
+            ConfettiParticle.prototype.update = function() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                
+                // Добавляем немного случайного движения
+                this.speedX += (Math.random() - 0.5) * 0.5;
+                
+                // Вращение
+                this.rotation += this.rotationSpeed;
+                
+                // Если конфетти ушло за пределы экрана, перезапускаем его
+                if (this.y > confettiCanvas.height || 
+                    this.x < -this.size || 
+                    this.x > confettiCanvas.width + this.size) {
+                    this.y = -this.size;
+                    this.x = Math.random() * confettiCanvas.width;
+                    this.speedY = (Math.random() * 5 + 2);
+                    this.speedX = (Math.random() * 4 - 2);
+                }
+            };
+            
+            // Отрисовка конфетти
+            ConfettiParticle.prototype.draw = function() {
+                context.save();
+                context.translate(this.x, this.y);
+                context.rotate(this.rotation * Math.PI / 180);
+                
+                context.fillStyle = this.color;
+                context.globalAlpha = confettiSettings.alpha;
+                
+                // Рисуем прямоугольник (конфетти)
+                context.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                
+                context.restore();
+            };
+            
+            // Инициализация частиц
+            function initConfetti() {
+                for (let i = 0; i < confettiSettings.maxCount; i++) {
+                    confetti.push(new ConfettiParticle());
+                }
+            }
+            
+            // Анимация
+            function startConfetti() {
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                }
+                
+                function animate() {
+                    context.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                    
+                    for (let i = 0; i < confetti.length; i++) {
+                        confetti[i].update();
+                        confetti[i].draw();
+                    }
+                    
+                    animationFrame = requestAnimationFrame(animate);
+                }
+                
+                animate();
+            }
+            
+            initConfetti();
+            startConfetti();
+        })();
+    </script>
+</body>
+</html>
